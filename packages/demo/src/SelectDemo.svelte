@@ -1,6 +1,10 @@
 <script lang="ts">
-  import '../../../dist/select.wc.js';
+  import '../../../dist/datepicker.wc.js';
 </script>
+<!--
+<jp-datepicker options={[{"value":"aaa"}, {"value":"bbb"}, {"value":"ccc"}]} label="Select">
+</jp-datepicker>-->
 
-<jp-select options={[{"value":"aaa"}, {"value":"bbb"}, {"value":"ccc"}]} label="Select">
-</jp-select>
+
+<jp-datepicker>
+</jp-datepicker>

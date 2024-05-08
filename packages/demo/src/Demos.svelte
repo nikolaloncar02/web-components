@@ -74,8 +74,8 @@
 
     el.appendChild(quill);
 
-    // const datepicker = document.createElement('jp-datepicker') as any;
-    // el.appendChild(datepicker);
+   const datepicker = document.createElement('jp-datepicker') as any;
+    el.appendChild(datepicker);
 
     // const multisearch = document.createElement('jp-multisearch')
     // multisearch.value = 'aaa, bbb'

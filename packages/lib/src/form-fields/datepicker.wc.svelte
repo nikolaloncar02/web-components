@@ -45,6 +45,7 @@
   let yearSelected = null;
   let monthSelected;
   let dateSelected;
+  let selectedDates = [];
   let pickerYear = new Date(Date.now()).getFullYear();
   let pickerMonth = new Date(Date.now()).getMonth();
   let pickerRows;
@@ -129,7 +130,20 @@
 
     return mData;
   };
+  
+  function toggleDateSelection(day, month, year) {
+    const index = selectedDates.findIndex(date => date.day === day && date.month === month && date.year === year);
+    if (index === -1) {
+        selectedDates = [...selectedDates,{ day, month, year } ]
+    } else {
+        selectedDates.splice(index, 1);
+    }
+}
 
+function isSelected(day, month, year) {
+    return selectedDates.some(date => date.day === day && date.month === month && date.year === year);
+    
+}
   function toggleMenu(event) {
     if (event && event.target && event.target.closest('.menu')) {
       return;
@@ -299,20 +313,19 @@
               {#each row as col}
                 <div class="table-cell">
                   <button
-                    type="button"
-                    class:gray={col.gray}
-                    class:active={dateSelected == col.day &&
-                      monthSelected == col.month &&
-                      yearSelected == col.year}
-                    on:click|preventDefault={() => {
-                      dateSelected = col.day;
-                      yearSelected = col.year;
-                      monthSelected = col.month;
-                      openPicker = false;
-                    }}
-                  >
-                    {col.day}
-                  </button>
+                  type="button"
+                  class:gray={col.gray}
+                  class:active={isSelected(col.day, col.month, col.year) }
+                  on:click|preventDefault={() => {
+                    console.log(selectedDates); //testing purposes
+                    toggleDateSelection(col.day, col.month, col.year);
+                    /* dateSelected = col.day;
+                    yearSelected = col.year;
+                    monthSelected = col.month; */
+                  }}
+                >
+                  {col.day}
+                </button>
                 </div>
               {/each}
             </div>
