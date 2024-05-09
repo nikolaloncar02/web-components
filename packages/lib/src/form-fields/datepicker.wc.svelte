@@ -16,7 +16,7 @@
 />
 
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { createEventDispatcher } from 'svelte';
   import { formatDisplayDate, formatReturnDate } from '../utils/dateFormatter';
 
   export let attachedInternals: ElementInternals;
@@ -68,6 +68,7 @@
     'Dec'
   ];
   let yearPickerIndex = 0;
+  let selectedDatesMap: { [key: string]: boolean } = {};
 
   export const getValue = () => {
     if (yearSelected) {
@@ -130,22 +131,31 @@
 
     return mData;
   };
-  
+
   function toggleDateSelection(day, month, year) {
-    const index = selectedDates.findIndex(date => date.day === day && date.month === month && date.year === year);
-    if (index === -1) {
-        selectedDates = [...selectedDates,{ day, month, year } ];
-    } else {
-        selectedDates.splice(index, 1);
-    }
-    internalValue = selectedDates.map(date => `${date.year}-${date.month + 1 < 10 ? '0' : ''}${date.month + 1}-${date.day < 10 ? '0' : ''}${date.day}`);
-}
-
-
-function isSelected(day, month, year) {
-    return selectedDates.some(date => date.day === day && date.month === month && date.year === year);
+    const index = selectedDates.findIndex(
+      (date) => date.day === day && date.month === month && date.year === year
+    );
     
-}
+    if (index === -1) {
+      selectedDates = [...selectedDates, { day, month, year }];
+      selectedDatesMap[`${year}-${month}-${day}`] = true;
+    } else {
+      selectedDates.splice(index, 1);
+      delete selectedDatesMap[`${year}-${month}-${day}`];
+    }
+
+    // trigger change detection
+    selectedDatesMap = selectedDatesMap;
+
+    internalValue = selectedDates.map(
+      (date) =>
+        `${date.year}-${date.month + 1 < 10 ? '0' : ''}${date.month + 1}-${
+          date.day < 10 ? '0' : ''
+        }${date.day}`
+    );
+  }
+
   function toggleMenu(event) {
     if (event && event.target && event.target.closest('.menu')) {
       return;
@@ -181,7 +191,7 @@ function isSelected(day, month, year) {
       pickerMonth = tmp.getMonth();
       pickerYear = tmp.getFullYear();
     }
-  };
+  }
 
   $: if (pickerMonth == 12) {
     pickerMonth = 0;
@@ -197,26 +207,35 @@ function isSelected(day, month, year) {
 
   $: {
     if (selectedDates.length > 0) {
-        internalValue = selectedDates.map(date => `${date.year}-${(date.month + 1).toString().padStart(2, '0')}-${date.day.toString().padStart(2, '0')}`);
-        displayedDateString = internalValue.join(', ');
-        attachedInternals.setValidity({});
-        internalValue.forEach(value => {
-            attachedInternals.setFormValue(value);
-        });
-        dispatch('value', {
-            value: formatReturnDate(selectedDates[selectedDates.length - 1], returnFormat, returnFormatFunction)
-        });
+      internalValue = selectedDates.map(
+        (date) =>
+          `${date.year}-${(date.month + 1).toString().padStart(2, '0')}-${date.day
+            .toString()
+            .padStart(2, '0')}`
+      );
+      displayedDateString = internalValue.join(', ');
+      attachedInternals.setValidity({});
+      internalValue.forEach((value) => {
+        attachedInternals.setFormValue(value);
+      });
+      dispatch('value', {
+        value: formatReturnDate(
+          selectedDates[selectedDates.length - 1],
+          returnFormat,
+          returnFormatFunction
+        )
+      });
     } else {
-        if (required) {
-            attachedInternals.setValidity(
-                { valueMissing: true },
-                requiredValidationMessage || `Date is required.`
-            );
-        }
-        displayedDateString = '';
-        dispatch('value', { value: '' });
+      if (required) {
+        attachedInternals.setValidity(
+          { valueMissing: true },
+          requiredValidationMessage || `Date is required.`
+        );
+      }
+      displayedDateString = '';
+      dispatch('value', { value: '' });
     }
-}
+  }
 
   $: if (openPicker) {
     document.documentElement.style.overflowY = 'hidden';
@@ -265,7 +284,11 @@ function isSelected(day, month, year) {
     <div class="menu" style={menuStyle}>
       <div class="menu-nav">
         <!--<button on:click|preventDefault={() => (pickerYear = pickerYear - 1)}>&lt;&lt;</button>-->
-        <button type="button" class="menu-nav-date" on:click|preventDefault={() => (yearSelector = true)}>
+        <button
+          type="button"
+          class="menu-nav-date"
+          on:click|preventDefault={() => (yearSelector = true)}
+        >
           <p>{monthMap[pickerMonth]}, {pickerYear}</p>
           <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512">
             <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
@@ -310,22 +333,22 @@ function isSelected(day, month, year) {
               {#each row as col}
                 <div class="table-cell">
                   <button
-                  type="button"
-                  class:gray={col.gray}
-                  class:active={isSelected(col.day, col.month, col.year)} 
-                  on:click|preventDefault={() => {
-                    console.log(selectedDates); //testing purposes 
-                    toggleDateSelection(col.day, col.month, col.year);
-                    dateSelected = selectedDates.map(date => date.day);
-                    yearSelected = selectedDates.map(date => date.month);
-                    monthSelected = selectedDates.map(date => date.year);
-                    /* dateSelected = col.day;
+                    type="button"
+                    class:gray={col.gray}
+                    data-value={[col.year, col.month, col.day].join('-')}
+                    class:active={selectedDatesMap[[col.year, col.month, col.day].join('-')]}
+                    on:click|preventDefault={() => {
+                      toggleDateSelection(col.day, col.month, col.year);
+                      dateSelected = selectedDates.map((date) => date.day);
+                      yearSelected = selectedDates.map((date) => date.month);
+                      monthSelected = selectedDates.map((date) => date.year);
+                      /* dateSelected = col.day;
                     yearSelected = col.year;
                     monthSelected = col.month; */
-                  }}
-                >
-                  {col.day}
-                </button>
+                    }}
+                  >
+                    {col.day}
+                  </button>
                 </div>
               {/each}
             </div>
