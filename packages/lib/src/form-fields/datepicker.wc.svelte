@@ -21,7 +21,7 @@
 
   export let attachedInternals: ElementInternals;
   export let value: string = '';
-  export let internalValue: string = '';
+  export let internalValue: Array<string> = [];
   export let required: boolean = false;
   export let requiredValidationMessage: string = '';
   export let name: string = '';
@@ -134,11 +134,13 @@
   function toggleDateSelection(day, month, year) {
     const index = selectedDates.findIndex(date => date.day === day && date.month === month && date.year === year);
     if (index === -1) {
-        selectedDates = [...selectedDates,{ day, month, year } ]
+        selectedDates = [...selectedDates,{ day, month, year } ];
     } else {
         selectedDates.splice(index, 1);
     }
+    internalValue = selectedDates.map(date => `${date.year}-${date.month + 1 < 10 ? '0' : ''}${date.month + 1}-${date.day < 10 ? '0' : ''}${date.day}`);
 }
+
 
 function isSelected(day, month, year) {
     return selectedDates.some(date => date.day === day && date.month === month && date.year === year);
@@ -194,32 +196,27 @@ function isSelected(day, month, year) {
   $: pickerRows = getPickerRows(pickerMonth, pickerYear);
 
   $: {
-    if (yearSelected) {
-      internalValue = `${yearSelected}-${monthSelected + 1 < 10 ? '0' : ''}${monthSelected + 1}-${
-        dateSelected < 10 ? '0' : ''
-      }${dateSelected}`;
-      selectedDateObject = new Date(internalValue);
-      displayedDateString = formatDisplayDate(
-        selectedDateObject,
-        displayFormat,
-        displayFormatFunction
-      );
-      attachedInternals.setValidity({});
-      attachedInternals.setFormValue(internalValue);
-      dispatch('value', {
-        value: formatReturnDate(selectedDateObject, returnFormat, returnFormatFunction)
-      });
+    if (selectedDates.length > 0) {
+        internalValue = selectedDates.map(date => `${date.year}-${(date.month + 1).toString().padStart(2, '0')}-${date.day.toString().padStart(2, '0')}`);
+        displayedDateString = internalValue.join(', ');
+        attachedInternals.setValidity({});
+        internalValue.forEach(value => {
+            attachedInternals.setFormValue(value);
+        });
+        dispatch('value', {
+            value: formatReturnDate(selectedDates[selectedDates.length - 1], returnFormat, returnFormatFunction)
+        });
     } else {
-      if (required) {
-        attachedInternals.setValidity(
-          { valueMissing: true },
-          requiredValidationMessage || `Date is required.`
-        );
-      }
-      displayedDateString = '';
-      dispatch('value', { value: '' });
+        if (required) {
+            attachedInternals.setValidity(
+                { valueMissing: true },
+                requiredValidationMessage || `Date is required.`
+            );
+        }
+        displayedDateString = '';
+        dispatch('value', { value: '' });
     }
-  }
+}
 
   $: if (openPicker) {
     document.documentElement.style.overflowY = 'hidden';
@@ -315,10 +312,13 @@ function isSelected(day, month, year) {
                   <button
                   type="button"
                   class:gray={col.gray}
-                  class:active={isSelected(col.day, col.month, col.year) }
+                  class:active={isSelected(col.day, col.month, col.year)} 
                   on:click|preventDefault={() => {
-                    console.log(selectedDates); //testing purposes
+                    console.log(selectedDates); //testing purposes 
                     toggleDateSelection(col.day, col.month, col.year);
+                    dateSelected = selectedDates.map(date => date.day);
+                    yearSelected = selectedDates.map(date => date.month);
+                    monthSelected = selectedDates.map(date => date.year);
                     /* dateSelected = col.day;
                     yearSelected = col.year;
                     monthSelected = col.month; */

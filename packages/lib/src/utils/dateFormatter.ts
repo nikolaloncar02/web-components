@@ -15,10 +15,14 @@ const monthNames = [
 ];
 const shortMonthNames = monthNames.map((el) => el.substring(0, 3));
 
-export function formatDisplayDate(date: Date, format: string, formatter?: (date: Date) => string) {
+export function formatDisplayDate(date: Date | Date[], format: string, formatter?: (date: Date) => string) {
+  if (Array.isArray(date)) {
+    return date.map((d) => formatDisplayDate(d, format, formatter));
+  }
+
   switch (format) {
     case 'custom':
-      return formatter(date);
+      return formatter ? formatter(date) : '';
     case 'normal':
       return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
     case 'short':
@@ -28,16 +32,20 @@ export function formatDisplayDate(date: Date, format: string, formatter?: (date:
     case 'long':
       return `${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
     case 'full':
-      return `${days[date.getDay()]}, ${
-        monthNames[date.getMonth()]
-      } ${date.getDate()}, ${date.getFullYear()}`;
+      return `${days[date.getDay()]}, ${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+    default:
+      return '';
   }
 }
 
-export function formatReturnDate(date: Date, format: string, formatter?: (date: Date) => any) {
+export function formatReturnDate(date: Date | Date[], format: string, formatter?: (date: Date) => any) {
+  if (Array.isArray(date)) {
+    return date.map((d) => formatReturnDate(d, format, formatter));
+  }
+
   switch (format) {
     case 'custom':
-      return formatter(date);
+      return formatter ? formatter(date) : '';
     case 'js':
       return date;
     case 'unix':
@@ -50,5 +58,7 @@ export function formatReturnDate(date: Date, format: string, formatter?: (date: 
       return date.toISOString();
     case 'isoDate':
       return date.toISOString().split('T')[0];
+    default:
+      return '';
   }
 }
